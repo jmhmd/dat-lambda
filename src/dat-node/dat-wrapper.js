@@ -62,6 +62,9 @@ module.exports = settings => {
       if (!options.da) {
         options.da = __dirname + '/dicom-anonymizer.default.script'; // use default anonymization script. -da flag must be present to do anonymization
       }
+      if (!options.dpa) {
+        options.dpa = __dirname + '/dicom-pixel-anonymizer.default.script';
+      }
 
       if (options) {
         Object.keys(options).forEach(flag => {
