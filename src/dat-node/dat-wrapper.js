@@ -60,7 +60,7 @@ module.exports = settings => {
       let execString = `java -jar ${jarPath}`;
 
       if (!options.da) {
-        options.da = ''; // use default anonymization script. -da flag must be present to do anonymization
+        options.da = __dirname + '/dicom-anonymizer.default.script'; // use default anonymization script. -da flag must be present to do anonymization
       }
 
       if (options) {
