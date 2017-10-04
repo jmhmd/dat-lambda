@@ -1,5 +1,4 @@
 const multipart = require('parse-multipart');
-const dicomParser = require('dicom-parser');
 const fs = require('fs');
 const anonymize = require('./src/dat-node')({ jarPath: './lib/DicomAnonymizerTool/DAT.jar' })
   .anonymize;
@@ -29,10 +28,10 @@ exports.handler = (event, context, callback) => {
 
     const loadedFileBuffer = fs.readFileSync(filePath);
 
-    console.time('parse');
-    const dataset = dicomParser.parseDicom(loadedFileBuffer);
-    const studyInstanceUid = dataset.string('x0020000d');
-    console.timeEnd('parse');
+    // console.time('parse');
+    // const dataset = dicomParser.parseDicom(loadedFileBuffer);
+    // const studyInstanceUid = dataset.string('x0020000d');
+    // console.timeEnd('parse');
 
     console.time('to-base-64');
     const base64String = loadedFileBuffer.toString('base64');

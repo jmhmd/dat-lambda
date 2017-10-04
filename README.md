@@ -10,10 +10,12 @@ Send a `POST` request containing a multipart/form-data encoded DICOM Part 10 fil
 
 ## Helpful links
 
-- [https://www.youtube.com/watch?v=BrYJlR0yRnw]()
+- Walkthrough for uploading binary data: [https://www.youtube.com/watch?v=BrYJlR0yRnw]()
 
-- [https://stackoverflow.com/a/41568664/910324]()
+- Some content type hints: [https://stackoverflow.com/a/41568664/910324]()
 
 - Multipart parser: [https://github.com/freesoftwarefactory/parse-multipart]()
 
 - Slightly helpful: [https://aws.amazon.com/blogs/compute/binary-support-for-api-integrations-with-amazon-api-gateway/]()
+
+- Test display a DICOM file in the browser: [https://rawgit.com/chafey/cornerstoneWADOImageLoader/master/examples/dicomfile/index.html]()

@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "version": "2017-09-28T14:08:55Z",
+    "version": "2017-10-03T01:09:21Z",
     "title": "dicom-upload"
   },
   "host": "lnrwbd1157.execute-api.us-east-2.amazonaws.com",
@@ -25,6 +25,9 @@
               "$ref": "#/definitions/Empty"
             },
             "headers": {
+              "Access-Control-Allow-Origin": {
+                "type": "string"
+              },
               "Content-Type": {
                 "type": "string"
               }
@@ -36,7 +39,8 @@
             "default": {
               "statusCode": "200",
               "responseParameters": {
-                "method.response.header.Content-Type": "'application/dicom'"
+                "method.response.header.Content-Type": "'application/dicom'",
+                "method.response.header.Access-Control-Allow-Origin": "'*'"
               },
               "contentHandling": "CONVERT_TO_BINARY"
             }
@@ -50,6 +54,50 @@
           "contentHandling": "CONVERT_TO_TEXT",
           "type": "aws"
         }
+      },
+      "options": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "200 response",
+            "schema": {
+              "$ref": "#/definitions/Empty"
+            },
+            "headers": {
+              "Access-Control-Allow-Origin": {
+                "type": "string"
+              },
+              "Access-Control-Allow-Methods": {
+                "type": "string"
+              },
+              "Access-Control-Allow-Headers": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "x-amazon-apigateway-integration": {
+          "responses": {
+            "default": {
+              "statusCode": "200",
+              "responseParameters": {
+                "method.response.header.Access-Control-Allow-Methods": "'POST,OPTIONS'",
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+                "method.response.header.Access-Control-Allow-Origin": "'*'"
+              }
+            }
+          },
+          "requestTemplates": {
+            "application/json": "{\"statusCode\": 200}"
+          },
+          "passthroughBehavior": "when_no_match",
+          "type": "mock"
+        }
       }
     }
   },
@@ -57,6 +105,22 @@
     "Empty": {
       "type": "object",
       "title": "Empty Schema"
+    }
+  },
+  "x-amazon-apigateway-gateway-responses": {
+    "DEFAULT_5XX": {
+      "responseParameters": {
+        "gatewayresponse.header.Access-Control-Allow-Methods": "'POST,OPTIONS'",
+        "gatewayresponse.header.Access-Control-Allow-Origin": "'*'",
+        "gatewayresponse.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+      }
+    },
+    "DEFAULT_4XX": {
+      "responseParameters": {
+        "gatewayresponse.header.Access-Control-Allow-Methods": "'POST,OPTIONS'",
+        "gatewayresponse.header.Access-Control-Allow-Origin": "'*'",
+        "gatewayresponse.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+      }
     }
   },
   "x-amazon-apigateway-binary-media-types": [

@@ -1,8 +1,112 @@
-<form action="https://lnrwbd1157.execute-api.us-east-2.amazonaws.com/test/upload"
-      method="POST"
-      enctype="multipart/form-data"
-      accept="application/octet-stream">
-  <input type="file"
-         name="file" />
-  <button type="submit">Submit</button>
-</form>
+<html>
+
+<head>
+  <title>Anonymize DICOM with Lambda</title>
+  <script src="https://unpkg.com/dicom-parser@1.7.5/dist/dicomParser.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dot/1.1.2/doT.min.js"></script>
+</head>
+
+<body>
+  <form action="https://lnrwbd1157.execute-api.us-east-2.amazonaws.com/test/upload"
+        method="POST"
+        enctype="multipart/form-data"
+        id="file-upload-form"
+        onsubmit="uploadAsFormData(event)">
+    <input type="file"
+           name="file"
+           id="file"
+           onchange="fileChange()" />
+    <button type="submit">Anonymize</button>
+  </form>
+  <h3>Input file details:</h3>
+  <div id="input-file-data"></div>
+  <h3>Output file details:</h3>
+  <div id="output-file-data"></div>
+  <script type="text/template"
+          id="dicom-headers">
+    <table>
+      <tr>
+        <td>Patient's Name</td>
+        <td>{{=it.string('x00100010')}}</td>
+      </tr>
+      <tr>
+        <td>Patient ID</td>
+        <td>{{=it.string('x00100020')}}</td>
+      </tr>
+      <tr>
+        <td>Study Description</td>
+        <td>{{=it.string('x00081030')}}</td>
+      </tr>
+      <tr>
+        <td>Series Description</td>
+        <td>{{=it.string('x0008103e')}}</td>
+      </tr>
+      <tr>
+        <td>Accession Number</td>
+        <td>{{=it.string('x00080050')}}</td>
+      </tr>
+      <tr>
+        <td>Study Date</td>
+        <td>{{=it.string('x00080020')}}</td>
+      </tr>
+      <tr>
+        <td>Study Time</td>
+        <td>{{=it.string('x00080030')}}</td>
+      </tr>
+      <tr>
+        <td>Modality</td>
+        <td>{{=it.string('x00080060')}}</td>
+      </tr>
+      <tr>
+        <td>Institution Name</td>
+        <td>{{=it.string('x00080080')}}</td>
+      </tr>
+    </table>
+  </script>
+  <script>
+    const uploadAction = document.getElementById('file-upload-form').getAttribute('action');
+    let file;
+
+    function uploadAsFormData(event) {
+      event.preventDefault();
+      const formData = new FormData();
+      const resultElement = document.getElementById('output-file-data');
+
+      formData.append('file', file);
+
+      fetch(uploadAction, {
+        method: 'POST',
+        body: formData,
+      }).then((response) => {
+        response.arrayBuffer().then((fileBuffer) => {
+          const fileUint8Array = new Uint8Array(fileBuffer);
+          const dataset = dicomParser.parseDicom(fileUint8Array);
+  
+          const dicomTemplate = doT.template(document.getElementById('dicom-headers').innerHTML);
+          resultElement.innerHTML = dicomTemplate(dataset);
+        })
+      }).catch((error) => { resultElement.innerHTML = error })
+    }
+
+    function fileChange() {
+      file = document.getElementById('file').files[0];
+      const reader = new FileReader();
+      const resultElement = document.getElementById('input-file-data');
+      reader.onload = (e) => {
+        const inputFileArrayBuffer = e.target.result;
+        try {
+          const fileUint8Array = new Uint8Array(inputFileArrayBuffer);
+          const dataset = dicomParser.parseDicom(fileUint8Array);
+
+          const dicomTemplate = doT.template(document.getElementById('dicom-headers').innerHTML);
+          resultElement.innerHTML = dicomTemplate(dataset);
+        } catch (e) {
+          resultElement.innerHTML = e;
+        }
+      }
+      reader.readAsArrayBuffer(file);
+    }
+  </script>
+</body>
+
+</html>
