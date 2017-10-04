@@ -22,11 +22,13 @@ exports.handler = (event, context, callback) => {
   // anonymize file in place
   anonymize({ in: filePath, out: filePath}, (err, stdout, stderr) => {
     if (err) {
+      fs.unlinkSync(filePath);
       return callback(err);
     }
     console.timeEnd('anonymize');
 
     const loadedFileBuffer = fs.readFileSync(filePath);
+
 
     // console.time('parse');
     // const dataset = dicomParser.parseDicom(loadedFileBuffer);
@@ -39,5 +41,7 @@ exports.handler = (event, context, callback) => {
 
     console.log('handler-end', new Date().getTime());
     callback(null, base64String);
+
+    fs.unlinkSync(filePath);
   });
 };

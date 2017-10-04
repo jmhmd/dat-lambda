@@ -16,7 +16,7 @@ anonymize(
     childExec(
       execString,
       { shell: "/bin/bash" },
-      process.stdout.write
+      console.log
     );
   }
 );
