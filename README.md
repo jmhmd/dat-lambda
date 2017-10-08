@@ -5,6 +5,9 @@ Run the RSNA [DicomAnonymizerTool](https://github.com/johnperry/DicomAnonymizerT
 ## Usage
 Send a `POST` request containing a multipart/form-data encoded DICOM Part 10 file to the Lambda function API endpoint, get the anonymized DICOM file in return.
 
+### Try it out
+[https://jmhmd.github.io/dat-lambda/]()
+
 ## Setup
 // todo
 
