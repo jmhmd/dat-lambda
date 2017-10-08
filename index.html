@@ -1,0 +1,190 @@
+<html>
+
+<head>
+  <title>Anonymize DICOM with Lambda</title>
+
+  <link rel="stylesheet"
+        href="//cdn.rawgit.com/milligram/milligram/master/dist/milligram.min.css">
+
+  <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+  <script src="https://unpkg.com/dicom-parser@1.7.5/dist/dicomParser.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dot/1.1.2/doT.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.3/FileSaver.min.js"></script>
+  <script src="lib/cornerstone/cornerstone.min.js"></script>
+  <script src="lib/cornerstone/cornerstoneWADOImageLoaderCodecs.min.js"></script>
+  <script src="lib/cornerstone/cornerstoneWADOImageLoaderWebWorker.min.js"></script>
+  <script src="lib/cornerstone/cornerstoneWADOImageLoader.min.js"></script>
+
+  <style>
+    body {
+      font-weight: normal;
+      line-height: 1.4;
+      letter-spacing: normal;
+    }
+
+    ol {
+      list-style: decimal outside;
+    }
+
+    ul {
+      list-style: circle outside;
+    }
+
+    ol,
+    ul {
+      padding-left: 20px;
+    }
+
+    .warn {
+      background: #ffe285;
+    }
+
+    #phi-checkbox {
+      background: #ffbbbb;
+      padding: 10px 10px 0px;
+    }
+    #phi-checkbox.ok {
+      background: #b4e0b4;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h2>Anonymize DICOM with AWS Lambda</h2>
+    <p>
+      <strong>
+        This proof-of-concept takes advantage of serverless computing to perform DICOM file anonymization. Choose a DICOM file below,
+        and click "Anonymize" to kick off the process. Here's what will happen:
+      </strong>
+    </p>
+    <ol>
+      <li>The input DICOM file headers are parsed in the browser before upload, and some headers are displayed</li>
+      <li>
+        Upon clicking "Anonymize", the file is securely uploaded (via SSL/HTTPS) to an HTTP endpoint defined in
+        <a href="https://aws.amazon.com/api-gateway/">AWS API Gateway</a>, which forwards the multipart/form-data binary upload to an
+        <a href="https://aws.amazon.com/lambda/?nc2=h_m1">AWS Lambda</a> function.
+      </li>
+      <li>
+        The Lambda function contains an instance of the RSNA
+        <a href="https://github.com/johnperry/DicomAnonymizerTool">DicomAnonymizerTool</a>, which is used within the
+        <a href="https://github.com/johnperry/CTP">Clinical Trials Processor</a> to perform anonymization.
+      </li>
+      <li>
+        Upon receiving the image data, the file is immediately anonymized, returned to the browser via the encrypted SSL/HTTPS response,
+        and deleted.
+      </li>
+    </ol>
+    <p>
+      <strong>
+        Some important points:
+      </strong>
+    </p>
+    <ul>
+      <li>
+        <span class="warn">This is for demonstration/testing purposes ONLY. DO NOT upload files containing Protected Health Information as defined
+          by HIPAA.</span>
+        If you don't know what that is, this tool probably isn't for you.
+      </li>
+      <li>
+        That said, if used in a properly managed healthcare environment with appropriate HIPAA logging and other standard security
+        practices, this tool would conform to HIPAA PHI protection requirements when used with an AWS account having
+        <a href="https://aws.amazon.com/compliance/hipaa-compliance/">a signed BAA in place</a>. The data is encrypted in transit via SSL/HTTPS, anonymized immediately and not stored
+        anywhere outside the client machine.
+      </li>
+      <li>
+        The
+        <a href="https://github.com/jmhmd/dat-lambda">source code is here.</a>
+      </li>
+    </ul>
+    <p>
+      <strong>Use the following test files to try out the anonymizer:</strong>
+    </p>
+    <ul>
+      <li><a href="sample-dicom/US_test.dcm">US_test.dcm</a></li>
+      <li><a href="sample-dicom/CT_test.dcm">CT_test.dcm</a></li>
+    </ul>
+    <form action="https://lnrwbd1157.execute-api.us-east-2.amazonaws.com/test/upload"
+          method="POST"
+          enctype="multipart/form-data"
+          id="file-upload-form"
+          onsubmit="uploadAsFormData(event)">
+      <input type="file"
+             name="file"
+             id="file"
+             onchange="fileChange()" />
+      <br>
+      <label id="phi-checkbox">
+        <input type="checkbox"
+               name="no-phi"
+               id="no-phi" /> This file does not contain Protected Health Information.
+      </label>
+      <br>
+      <button type="submit"
+              id="anonymize-button">Anonymize</button>
+    </form>
+    <h3>Input file details:</h3>
+    <div class="row">
+      <div id="input-file-data"
+           class="column"></div>
+      <div id="input-preview"
+           class="column"
+           style="width:100%"></div>
+    </div>
+    <h3>Output file details:</h3>
+    <div class="row">
+      <div id="output-file-data"
+           class="column"></div>
+      <div id="output-preview"
+           class="column"
+           style="width:100%"></div>
+    </div>
+  </div>
+  </div>
+
+
+  <script type="text/template"
+          id="dicom-headers">
+    <table>
+      <tr>
+        <td>Patient's Name</td>
+        <td>{{=it.string('x00100010')}}</td>
+      </tr>
+      <tr>
+        <td>Patient ID</td>
+        <td>{{=it.string('x00100020')}}</td>
+      </tr>
+      <tr>
+        <td>Study Description</td>
+        <td>{{=it.string('x00081030')}}</td>
+      </tr>
+      <tr>
+        <td>Series Description</td>
+        <td>{{=it.string('x0008103e')}}</td>
+      </tr>
+      <tr>
+        <td>Accession Number</td>
+        <td>{{=it.string('x00080050')}}</td>
+      </tr>
+      <tr>
+        <td>Study Date</td>
+        <td>{{=it.string('x00080020')}}</td>
+      </tr>
+      <tr>
+        <td>Study Time</td>
+        <td>{{=it.string('x00080030')}}</td>
+      </tr>
+      <tr>
+        <td>Modality</td>
+        <td>{{=it.string('x00080060')}}</td>
+      </tr>
+      <tr>
+        <td>Institution Name</td>
+        <td>{{=it.string('x00080080')}}</td>
+      </tr>
+    </table>
+  </script>
+  <script src="src/index.js"></script>
+</body>
+
+</html>

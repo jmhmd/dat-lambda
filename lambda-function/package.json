@@ -1,0 +1,18 @@
+{
+  "name": "dat-lambda",
+  "version": "0.1.0",
+  "description": "[https://www.youtube.com/watch?v=BrYJlR0yRnw]()",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Jason Hostetter",
+  "license": "MIT",
+  "dependencies": {
+    "dicom-parser": "^1.7.5",
+    "parse-multipart": "^1.0.4"
+  },
+  "devDependencies": {
+    "eslint": "^4.7.2"
+  }
+}
