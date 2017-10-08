@@ -1,6 +1,6 @@
 const multipart = require('parse-multipart');
 const fs = require('fs');
-const anonymize = require('./src/dat-node')({ jarPath: './lib/DicomAnonymizerTool/DAT.jar' })
+const anonymize = require('./lib/dat-node')({ jarPath: './lib/DicomAnonymizerTool/DAT.jar' })
   .anonymize;
 
 exports.handler = (event, context, callback) => {
