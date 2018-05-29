@@ -33,6 +33,8 @@ function loadTestFile(e) {
   fetch(url, { method: 'GET' })
   .then((response) => {
     response.blob().then(file => myDropzone.addFile(file));
+    phiAttestation.checked = true;
+    togglePHICheck(true);
   })
   .catch(console.error);
 }

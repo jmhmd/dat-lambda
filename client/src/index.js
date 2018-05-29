@@ -105,13 +105,15 @@ function checkForFile(fileKey) {
         if (!res.ok) throw new Error(res.statusText);
 
         // res.ok, file exists, and processing is done. Stop polling.
-        progress.querySelector('.progress-bar span').innerHTML = 'Processing complete';
+        progress.querySelector('.progress-bar span').innerHTML =
+          'Processing complete, downloading anonymized file...';
         resultElement.innerHTML = 'Downloading...';
         clearInterval(poll);
 
         // download the file
         fetch(s3ResultDir + fileKey, { method: 'GET' })
           .then((res) => {
+            progress.querySelector('.progress-bar span').innerHTML = 'Processing complete.';
             handleFileResponse(res);
           })
           .catch((err) => {
@@ -158,7 +160,7 @@ async function uploadAsFormData(event) {
 
   formData.append('file', fileToUpload);
 
-  resultElement.innerHTML = 'File uploading...';
+  resultElement.innerHTML = 'File uploading to S3...';
   anonymizeButton.innerHTML = 'Loading...';
   anonymizeButton.disabled = true;
 
@@ -167,13 +169,14 @@ async function uploadAsFormData(event) {
     console.log('progress', e);
     const percentDone = Math.floor(e.loaded / e.total * 100);
     progress.querySelector('.progress-bar').style.cssText = `width: ${percentDone}%`;
-    progress.querySelector('.progress-bar span').innerHTML = percentDone + '%';
+    progress.querySelector('.progress-bar span').innerHTML =
+      'Uploading to S3: ' + percentDone + '%';
   }
   function completeHandler(e) {
     console.log('complete', e);
     progress.querySelector('.progress-bar').style.cssText = 'width: 100%';
     progress.querySelector('.progress-bar span').innerHTML = 'Processing...';
-    resultElement.innerHTML = 'Processing...';
+    resultElement.innerHTML = 'Processing file in Lambda function...';
     checkForFile(fileKey);
   }
   function errorHandler(e) {
@@ -192,7 +195,7 @@ async function uploadAsFormData(event) {
 
   // show progress bar
   progress.querySelector('.progress-bar').style.cssText = `width: ${0}%`;
-  progress.querySelector('.progress-bar span').innerHTML = '0%';
+  progress.querySelector('.progress-bar span').innerHTML = 'Uploading to S3: 0%';
   progress.style.cssText = 'display: block';
 }
 
@@ -211,6 +214,8 @@ function resetAll() {
   progress.style.cssText = 'display: none';
   cornerstoneWADOImageLoader.wadouri.fileManager.purge();
   cornerstoneWADOImageLoader.wadouri.dataSetCacheManager.purge();
+  phiAttestation.checked = false;
+  togglePHICheck(false);
 }
 
 async function readFile(file) {
@@ -320,11 +325,15 @@ async function fileChange(inputFiles) {
 }
 
 // Handle background color hint for PHI attestation
-document.getElementById('no-phi').addEventListener('change', (e) => {
+function togglePHICheck(checked) {
   const element = document.getElementById('phi-checkbox');
-  if (e.target.checked) {
+  if (checked) {
     element.className = 'ok';
   } else {
     element.className = '';
   }
+}
+document.getElementById('no-phi').addEventListener('change', (e) => {
+  const element = document.getElementById('phi-checkbox');
+  togglePHICheck(e.target.checked);
 });
