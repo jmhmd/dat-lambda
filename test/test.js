@@ -1,5 +1,5 @@
 const childExec = require('child_process').exec;
-const anonymize = require('../src/dat-node')({ jarPath: './lib/DicomAnonymizerTool/DAT.jar' })
+const anonymize = require('../lambda-function/lib/dat-node')({ jarPath: '../lambda-function/lib/DicomAnonymizerTool/DAT.jar' })
   .anonymize;
 
 const inPath = __dirname + '/01.dcm';

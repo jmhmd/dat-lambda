@@ -1,4 +1,5 @@
 const childProcess = require('child_process');
+const shellEscape = require('shell-escape');
 
 /**
  *
@@ -67,12 +68,20 @@ module.exports = settings => {
       }
 
       if (options) {
+        // Object.keys(options).forEach(flag => {
+        //   execString += ` -${flag} ${options[flag]}`;
+        // });
+        const args = [];
         Object.keys(options).forEach(flag => {
-          execString += ` -${flag} ${options[flag]}`;
+          args.push(`-${flag}`);
+          args.push(options[flag]);
         });
+        execString += ` ${shellEscape(args)}`;
       }
 
-      console.log(execString);
+      if (settings.verbose) {
+        console.log(execString);
+      }
 
       childProcess.exec(execString, (err, stdout, stderr) => {
         return callback(err, stdout, stderr);

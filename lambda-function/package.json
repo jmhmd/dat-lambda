@@ -9,8 +9,13 @@
   "author": "Jason Hostetter",
   "license": "MIT",
   "dependencies": {
-    "dicom-parser": "^1.7.5",
-    "parse-multipart": "^1.0.4"
+    "archiver": "^2.1.1",
+    "file-type": "^8.0.0",
+    "fs-extra": "^6.0.1",
+    "read-chunk": "^2.1.0",
+    "shell-escape": "^0.2.0",
+    "tempy": "^0.2.1",
+    "unzip-stream": "^0.3.0"
   },
   "devDependencies": {
     "eslint": "^4.7.2"

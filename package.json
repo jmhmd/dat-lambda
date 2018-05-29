@@ -1,0 +1,33 @@
+{
+  "name": "dat-lambda",
+  "version": "1.0.0",
+  "description": "Run the RSNA [DicomAnonymizerTool](https://github.com/johnperry/DicomAnonymizerTool) in an AWS Lambda function",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "async": "^2.6.0",
+    "request": "^2.83.0"
+  },
+  "devDependencies": {
+    "async": "^2.6.0",
+    "form-data": "^2.3.1",
+    "klaw-sync": "^3.0.2",
+    "request": "^2.83.0",
+    "single-line-log": "^1.1.2"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://jmhmd@github.com/jmhmd/dat-lambda.git"
+  },
+  "author": "jmhmd",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/jmhmd/dat-lambda/issues"
+  },
+  "homepage": "https://github.com/jmhmd/dat-lambda#readme"
+}

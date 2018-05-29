@@ -1,7 +1,7 @@
 const fs = require('fs');
 const javaVersion = require('./java-version');
 
-function checkDependencies(jarPath) {
+function checkDependencies(jarPath, settings) {
   /**
    * Ensure Java installed, DAT jar available
    */
@@ -10,14 +10,18 @@ function checkDependencies(jarPath) {
     if (err) {
       throw err;
     }
-    console.log(`Java version: ${version}`);
+    if (settings.verbose) {
+      console.log(`Java version: ${version}`);
+    }
 
     fs.stat(jarPath, (err, stat) => {
       if (err) {
         // console.log(err)
         throw new Error(err, 'DicomAnonymizerTool Jar file not found');
       }
-      console.log(`DicomAnonymizerTool jar found`);
+      if (settings.verbose) {
+        console.log(`DicomAnonymizerTool jar found`);
+      }
     });
   });
 }
@@ -30,7 +34,7 @@ module.exports = settings => {
   const DATWrapper = require('./dat-wrapper')({ jarPath });
 
   // check deps
-  checkDependencies(jarPath);
+  checkDependencies(jarPath, settings);
 
   return {
     anonymize: DATWrapper.anonymize,
