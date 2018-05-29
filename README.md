@@ -12,6 +12,8 @@ Run the RSNA [DicomAnonymizerTool](https://github.com/johnperry/DicomAnonymizerT
 ## Setup
 // todo
 
-## Helpful links
+## Helpful
+
+- Subtree push /client to gh-pages for deployment: `git subtree push --prefix client origin gh-pages`
 
 - Test display a DICOM file in the browser: [https://rawgit.com/chafey/cornerstoneWADOImageLoader/master/examples/dicomfile/index.html](https://rawgit.com/chafey/cornerstoneWADOImageLoader/master/examples/dicomfile/index.html)
