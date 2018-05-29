@@ -175,8 +175,8 @@ async function uploadAsFormData(event) {
   function completeHandler(e) {
     console.log('complete', e);
     progress.querySelector('.progress-bar').style.cssText = 'width: 100%';
-    progress.querySelector('.progress-bar span').innerHTML = 'Processing...';
-    resultElement.innerHTML = 'Processing file in Lambda function...';
+    progress.querySelector('.progress-bar span').innerHTML = 'Processing file in Lambda function...';
+    resultElement.innerHTML = 'Processing file...';
     checkForFile(fileKey);
   }
   function errorHandler(e) {
