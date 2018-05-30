@@ -58,7 +58,7 @@ module.exports = settings => {
         options = {};
       }
 
-      let execString = `java -jar ${jarPath}`;
+      let execString = `java -jar -Djava.awt.headless=true ${jarPath}`;
 
       if (!options.da) {
         options.da = __dirname + '/dicom-anonymizer.default.script'; // use default anonymization script. -da flag must be present to do anonymization
@@ -83,7 +83,7 @@ module.exports = settings => {
         console.log(execString);
       }
 
-      childProcess.exec(execString, (err, stdout, stderr) => {
+      childProcess.exec(execString, {maxBuffer: 1024 * 500}, (err, stdout, stderr) => {
         return callback(err, stdout, stderr);
       });
     },

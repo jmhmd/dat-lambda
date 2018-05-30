@@ -2,8 +2,8 @@ const AWS = require('aws-sdk');
 const s3 = new AWS.S3();
 const fs = require('fs-extra');
 const path = require('path');
-const fileType = require('file-type');
-const readChunk = require('read-chunk');
+const stream = require('stream');
+const StreamFileType = require('stream-file-type');
 const unzip = require('unzip-stream');
 const archiver = require('archiver');
 const tempy = require('tempy');
@@ -40,17 +40,16 @@ async function generateZip(inPath, outPath) {
     // append files from a sub-directory, putting its contents at the root of archive
     archive.directory(inPath, false);
     archive.finalize();
-  })
+  });
 }
 
-async function processZip(filePath) {
+async function processZip(fileStream) {
   const inDir = tempy.directory();
   const outDir = `${inDir}-anon`;
 
   // unzip archive
   await new Promise((resolve, reject) => {
-    fs
-      .createReadStream(filePath)
+    fileStream
       .pipe(unzip.Extract({ path: inDir }))
       .on('close', resolve)
       .on('error', reject);
@@ -95,30 +94,58 @@ async function processZip(filePath) {
   });
 }
 
-async function processSingleFile(filePath) {
-  const outPath = `${filePath}-anon`;
-  return new Promise((resolve, reject) => {
-    // anonymize file
-    console.log(`Anonymizing ${filePath} to ${outPath}`);
-    anonymize({ in: filePath, out: outPath }, (anonErr, stdout, stderr) => {
-      console.log(stdout, stderr);
-      if (anonErr) {
-        return reject(anonErr);
-      }
-      return resolve(outPath);
-    });
+async function processSingleFile(fileStream) {
+  const inPath = tempy.file();
+  const outPath = `${inPath}-anon`;
+
+  // write file to tmp
+  await new Promise((resolve, reject) => {
+    const writeStream = fs.createWriteStream(inPath);
+    fileStream
+      .pipe(writeStream)
+      .on('close', resolve)
+      .on('error', reject);
   });
+
+  // anonymize file
+  console.log(`Anonymizing ${inPath} to ${outPath}`);
+  try {
+    const outFile = await new Promise((resolve, reject) => {
+      anonymize({ in: inPath, out: outPath }, (anonErr, stdout, stderr) => {
+        console.log(stdout, stderr);
+        if (anonErr) {
+          return reject(anonErr);
+        }
+        return resolve(outPath);
+      });
+    });
+    return outFile;
+  } catch (err) {
+    throw err;
+  } finally {
+    fs.remove(inPath);
+  }
 }
 
-async function processFile(filePath) {
-  const chunkBuffer = readChunk.sync(filePath, 0, 4100);
-  const type = fileType(chunkBuffer);
+async function processFile(fileStream) {
+  let type;
+  let passthrough = stream.PassThrough();
+
+  try {
+    const mimeDetector = new StreamFileType();
+    const typePromise = mimeDetector.fileTypePromise();
+    fileStream.pipe(mimeDetector).pipe(passthrough);
+    type = await typePromise;
+  } catch (err) {
+    console.log('Mime err:', err);
+    throw err;
+  }
 
   let processedFilePath;
   if (type && type.ext === 'zip') {
     try {
       console.log('Processing zip file.');
-      processedFilePath = await processZip(filePath);
+      processedFilePath = await processZip(passthrough);
     } catch (err) {
       console.error(err);
       throw new Error('Error processing zip file.');
@@ -126,7 +153,7 @@ async function processFile(filePath) {
   } else {
     console.log('Not a zip file.');
     try {
-      processedFilePath = await processSingleFile(filePath);
+      processedFilePath = await processSingleFile(passthrough);
     } catch (err) {
       console.error(err);
       throw new Error('Error processing file.');
@@ -136,10 +163,19 @@ async function processFile(filePath) {
 }
 
 exports.handler = async (event) => {
-  const test = event.test;
-  const srcBucket = event.Records[0].s3.bucket.name;
-  // Object key may have spaces or unicode non-ASCII characters.
-  const srcKey = decodeURIComponent(event.Records[0].s3.object.key.replace(/\+/g, ' '));
+  console.log('Event:', JSON.stringify(event, null, 2));
+  let test = event.test;
+  let srcBucket;
+  let srcKey;
+  if (event.queryStringParameters && event.queryStringParameters.srcBucket) {
+    srcBucket = event.queryStringParameters.srcBucket;
+    srcKey = event.queryStringParameters.srcKey;
+    test = true;
+  } else {
+    srcBucket = event.Records[0].s3.bucket.name;
+    // Object key may have spaces or unicode non-ASCII characters.
+    srcKey = decodeURIComponent(event.Records[0].s3.object.key.replace(/\+/g, ' '));
+  }
 
   try {
     const destKey = getDestKey(srcKey);
@@ -147,25 +183,21 @@ exports.handler = async (event) => {
 
     console.log(`Processing file with key ${srcKey} from bucket ${srcBucket}.`);
 
-    let tmpFilePath;
+    let fileStream;
     try {
-      const file = await s3
+      fileStream = s3
         .getObject({
           Bucket: srcBucket,
           Key: srcKey,
         })
-        .promise();
-      tmpFilePath = tempy.file();
-      await fs.writeFile(tmpFilePath, file.Body);
+        .createReadStream();
     } catch (err) {
       console.error(err);
       throw new Error('Error getting object from S3.');
     }
 
-    console.log(`Saved temporary file "${tmpFilePath}".`);
-
     try {
-      processedFilePath = await processFile(tmpFilePath);
+      processedFilePath = await processFile(fileStream);
       await s3
         .putObject({
           Bucket: srcBucket,
@@ -173,20 +205,30 @@ exports.handler = async (event) => {
           Body: fs.createReadStream(processedFilePath),
         })
         .promise();
-      return 'Success.';
+      console.log('Success.');
+      return {
+        isBase64Encoded: false,
+        statusCode: 200,
+        headers: {},
+        body: 'Success.',
+      };
     } catch (err) {
       console.error('Error processing file:', err);
+      return new Error('Error.');
     } finally {
-      await fs.remove(tmpFilePath);
       await fs.remove(processedFilePath);
     }
   } finally {
     // if not testing, delete the source (non-anonymized) file
+    console.log('Testing?', test);
     if (!test) {
-      await s3.deleteObject({
-        Bucket: srcBucket,
-        Key: srcKey,
-      });
+      await s3
+        .deleteObject({
+          Bucket: srcBucket,
+          Key: srcKey,
+        })
+        .promise();
+      console.log('Deleted source file.');
     }
   }
 };

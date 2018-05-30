@@ -17,7 +17,7 @@ cornerstoneWADOImageLoader.webWorkerManager.initialize(config);
 /**
  * Define endpoint url for getting a pre-signed S3 upload form data and the bucket with result data.
  */
-const s3SignerUrl = 'https://y7joeqvq80.execute-api.us-east-2.amazonaws.com/test/s3-upload-signer';
+const s3SignerUrl = 'https://y7joeqvq80.execute-api.us-east-2.amazonaws.com/beta/s3-upload-signer';
 const s3ResultDir = 'https://s3.us-east-2.amazonaws.com/dicom-anonymizer/anonymized/';
 
 /**
@@ -27,6 +27,12 @@ const resultElement = document.getElementById('output-file-data');
 const anonymizeButton = document.getElementById('anonymize-button');
 const phiAttestation = document.getElementById('no-phi');
 const progress = document.getElementById('progress');
+let totalTime;
+let totalTimeStart;
+let uploadTime;
+let downloadStart;
+let downloadTime;
+let processingTime;
 
 /**
  * UUID v4 generator
@@ -52,6 +58,11 @@ async function handleFileResponse(response) {
       let previewUint8Array;
       let info;
       let size = fileArrayBuffer.byteLength;
+
+      // print timing
+      downloadTime = new Date() - downloadStart;
+      totalTime = new Date() - totalTimeStart;
+      console.log(`Upload: ${uploadTime}\nDownload: ${downloadTime}\nTotal: ${totalTime}`);
 
       // Parse the returned file with cornerstone
       const outputFileUint8Array = new Uint8Array(fileArrayBuffer);
@@ -111,6 +122,7 @@ function checkForFile(fileKey) {
         clearInterval(poll);
 
         // download the file
+        downloadStart = new Date();
         fetch(s3ResultDir + fileKey, { method: 'GET' })
           .then((res) => {
             progress.querySelector('.progress-bar span').innerHTML = 'Processing complete.';
@@ -151,6 +163,7 @@ async function uploadAsFormData(event) {
     .then((data) => JSON.parse(data.body));
   const formData = new FormData();
   const uploadUrl = s3UploadHeaders.url;
+  let uploadTimeStart;
 
   formData.append('key', 'uploads/' + fileKey);
 
@@ -173,6 +186,7 @@ async function uploadAsFormData(event) {
       'Uploading to S3: ' + percentDone + '%';
   }
   function completeHandler(e) {
+    uploadTime = new Date() - uploadTimeStart;
     console.log('complete', e);
     progress.querySelector('.progress-bar').style.cssText = 'width: 100%';
     progress.querySelector('.progress-bar span').innerHTML = 'Processing file in Lambda function...';
@@ -192,6 +206,8 @@ async function uploadAsFormData(event) {
   xhr.addEventListener('abort', abortHandler, false);
   xhr.open('POST', uploadUrl);
   xhr.send(formData);
+  totalTimeStart = new Date();
+  uploadTimeStart = new Date();
 
   // show progress bar
   progress.querySelector('.progress-bar').style.cssText = `width: ${0}%`;
@@ -315,6 +331,7 @@ async function fileChange(inputFiles) {
 
     info = dicomTemplate(dataset);
     // load image preview
+    document.getElementById('processing-message').style.display = 'none';
     loadStack(previewFiles, 'input-preview');
   } catch (err) {
     console.error(err);
