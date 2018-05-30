@@ -20,6 +20,7 @@ const myDropzone = new Dropzone("div#file-drop", {
     this.on('addedfile', (file) => {
       file.previewElement = null;
       this.previewsContainer.style.display = 'none';
+      document.getElementById('processing-message').style.display = 'block';
       loadPreview();
     })
   }

@@ -80,6 +80,8 @@
       color: #fff;
       position: relative;
       top: 2px;
+      display: inline-block;
+      width: 200px;
     }
 
     #file-drop {
@@ -160,6 +162,12 @@
     #phi-checkbox.ok {
       color: green;
     }
+
+    #processing-message {
+      text-align: center;
+      font-size: 36;
+      font-weight: bold;
+    }
   </style>
 </head>
 
@@ -239,6 +247,9 @@
                 </div>
               </p>
             </div>
+          </div>
+          <div class="row" id="processing-message" style="display: none">
+            Processing input...
           </div>
           <div class="row previews"
                id="previews"
