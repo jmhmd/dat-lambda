@@ -5,14 +5,17 @@
  * Configure cornerstone image decoding codecs and web workers so we can show nice previews
  */
 const config = {
-  webWorkerPath: './lib/cornerstone/cornerstoneWADOImageLoaderWebWorker.min.js',
+  webWorkerPath: './lib/cornerstone-2.2.4/cornerstoneWADOImageLoaderWebWorker.min.js',
   taskConfiguration: {
     decodeTask: {
       codecsPath: './cornerstoneWADOImageLoaderCodecs.min.js',
+      strict: false,
     },
   },
 };
 cornerstoneWADOImageLoader.webWorkerManager.initialize(config);
+// register image loader
+cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
 
 /**
  * Define endpoint url for getting a pre-signed S3 upload form data and the bucket with result data.
@@ -274,12 +277,19 @@ function loadStack(files, elementId) {
   // enable basic tools
   cornerstoneTools.mouseInput.enable(element);
   cornerstoneTools.mouseWheelInput.enable(element);
+  // add stack state manager if not already present
+  const stackStateManager = cornerstoneTools.getElementToolStateManager(element).get(element, 'stack');
+  if (!stackStateManager) {
+    cornerstoneTools.addStackStateManager(element, ['stack']);
+  } else {
+    // clear stack state
+    cornerstoneTools.getElementToolStateManager(element).restoreToolState({});
+  }
   // load first image
   cornerstone.loadImage(imageIds[0]).then(function(image) {
     // Display the image
     cornerstone.displayImage(element, image);
     // Set the stack as tool state
-    cornerstoneTools.addStackStateManager(element, ['stack']);
     cornerstoneTools.addToolState(element, 'stack', stack);
     // Enable all tools we want to use with this element
     cornerstoneTools.stackScroll.activate(element, 1);
